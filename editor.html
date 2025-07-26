@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎨 Print Case - Editor de Mockups</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background: #f0dddd;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .app-header {
+      background: #e00d0d;
+      color: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .card {
+      border-radius: 15px;
+    }
+    #canvas-container {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #ced4da;
+      padding: 1rem;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+    }
+    /* Que el canvas llene el contenedor en ancho, y altura automática para mantener proporción */
+    #canvas-container canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
+    }
+    /* Preview para eliminar */
+    #previewEliminar {
+      margin-top: 1rem;
+      text-align: center;
+      display: none;
+    }
+    #previewEliminar img {
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body onload="cargarMockups()">
+
+<div class="container py-4">
+  <div class="app-header">
+    <h2 class="mb-0">🎨 Print Case </h2>
+  </div>
+
+  <div class="card shadow-sm p-4">
+    <div class="row g-4">
+
+      <div class="col-md-6">
+        <label class="form-label">📱 Modelo de teléfono:</label>
+        <select class="form-select" id="modeloSelect">
+          <option value="">-- Selecciona --</option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">🖼 Imagen del usuario:</label>
+        <input class="form-control" type="file" id="userimg" accept="image/*" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">✏️ Texto personalizado:</label>
+        <input class="form-control" type="text" id="textoPersonalizado" placeholder="Escribe algo..." />
+      </div>
+
+      <div class="col-md-6 d-flex align-items-end">
+        <button class="btn btn-outline-primary w-100" onclick="agregarTexto()">➕ Agregar Texto</button>
+      </div>
+
+      <div class="col-md-12 d-flex justify-content-between mt-3">
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalMockup">
+          ⚙️ Gestionar Mockups
+        </button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" onclick="insertarMockup()">📌 Insertar en Mockup</button>
+          <button class="btn btn-success" onclick="descargar()">📥 Descargar</button>
+        </div>
+      </div>
+
+      <!-- Canvas dentro de col-md-6 -->
+      <div class="col-md-6 mt-4">
+        <div id="canvas-container">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+      <!-- Columna vacía para balancear -->
+      <div class="col-md-6 mt-4"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalMockup" tabindex="-1" aria-labelledby="modalMockupLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalMockupLabel">📤 Subir o eliminar Mockup</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">📷 Imagen del Mockup (PNG):</label>
+          <input type="file" id="nuevoMockup" class="form-control" accept="image/png" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">📛 Nombre del modelo:</label>
+          <input type="text" id="nombreMockup" class="form-control" placeholder="Ej. iphone15" />
+        </div>
+        <div class="d-grid gap-2 mb-3">
+          <button class="btn btn-outline-success" onclick="subirMockup()">💾 Guardar</button>
+        </div>
+        <hr>
+        <div>
+          <label class="form-label">📱 Selecciona mockup a eliminar:</label>
+          <select id="eliminarSelect" class="form-select">
+            <option value="">-- Selecciona --</option>
+          </select>
+          <div id="previewEliminar">
+            <small>🔍 Vista previa:</small>
+            <img id="imagenPreviewEliminar" src="" alt="Vista previa mockup" />
+          </div>
+          <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-outline-danger" onclick="eliminarMockup()">🗑 Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let modelos = {};
+
+const canvas = new fabric.Canvas("canvas", {
+  preserveObjectStacking: true,
+});
+
+function ajustarCanvasAlContenedor(originalWidth, originalHeight) {
+  const container = document.getElementById("canvas-container");
+  const maxWidth = container.clientWidth;
+  const maxHeight = container.clientHeight;
+
+  const scaleX = maxWidth / originalWidth;
+  const scaleY = maxHeight / originalHeight;
+  const escala = Math.min(scaleX, scaleY);
+
+  canvas.setWidth(originalWidth * escala);
+  canvas.setHeight(originalHeight * escala);
+  canvas.setZoom(escala);
+}
+
+async function cargarMockups() {
+  const res = await fetch("mockups.json");
+  modelos = await res.json();
+
+  const select = document.getElementById("modeloSelect");
+  select.innerHTML = '<option value="">-- Selecciona --</option>';
+
+  const eliminarSelect = document.getElementById("eliminarSelect");
+  eliminarSelect.innerHTML = '<option value="">-- Selecciona --</option>';
+
+  Object.entries(modelos).forEach(([key, value]) => {
+    const opt1 = document.createElement("option");
+    opt1.value = key;
+    opt1.textContent = key;
+    select.appendChild(opt1);
+
+    const opt2 = document.createElement("option");
+    opt2.value = key;
+    opt2.textContent = key;
+    eliminarSelect.appendChild(opt2);
+  });
+}
+
+document.getElementById("eliminarSelect").addEventListener("change", function() {
+  const modelo = this.value;
+  const previewDiv = document.getElementById("previewEliminar");
+  const previewImg = document.getElementById("imagenPreviewEliminar");
+
+  if (modelo && modelos[modelo]) {
+    previewImg.src = modelos[modelo];
+    previewDiv.style.display = "block";
+  } else {
+    previewDiv.style.display = "none";
+    previewImg.src = "";
+  }
+});
+
+function insertarMockup() {
+  const modelo = document.getElementById("modeloSelect").value;
+  const userFile = document.getElementById("userimg").files[0];
+  if (!modelo || !userFile) 
+    return Swal.fire("📌 Faltan datos", "Selecciona un modelo y una imagen.", "warning");
+
+  canvas.clear();
+  const mockupPath = modelos[modelo];
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    fabric.Image.fromURL(e.target.result, function (userImg) {
+      fabric.Image.fromURL(mockupPath, function (mockupImg) {
+        ajustarCanvasAlContenedor(mockupImg.width, mockupImg.height);
+        const areaWidth = mockupImg.width * 0.8;
+        const areaHeight = mockupImg.height * 0.8;
+        const scale = Math.min(areaWidth / userImg.width, areaHeight / userImg.height);
+        userImg.set({
+          originX: "center", originY: "center",
+          left: mockupImg.width / 2, top: mockupImg.height / 2,
+          scaleX: scale, scaleY: scale
+        });
+        canvas.add(userImg).setActiveObject(userImg);
+        mockupImg.set({ selectable: false, evented: false });
+        canvas.add(mockupImg);
+        mockupImg.moveTo(canvas.getObjects().length);
+        canvas.renderAll();
+
+        Swal.fire({
+          icon: "success",
+          title: "Mockup insertado",
+          text: "Tu imagen se ha insertado correctamente.",
+          timer: 2000,
+          showConfirmButton: false
+        });
+      });
+    });
+  };
+  reader.readAsDataURL(userFile);
+}
+
+function agregarTexto() {
+  const texto = document.getElementById("textoPersonalizado").value;
+  if (!texto.trim()) 
+    return Swal.fire("✏️ Campo vacío", "Por favor, escribe un texto antes de agregar.", "info");
+  const text = new fabric.Textbox(texto, {
+    left: 50,
+    top: 50,
+    fontSize: 24,
+    fontFamily: "Arial"
+  });
+  canvas.add(text).setActiveObject(text);
+}
+
+function descargar() {
+  const link = document.createElement("a");
+  link.download = "resultado_mockup.png";
+  link.href = canvas.toDataURL({ format: "png", multiplier: 3 });
+  link.click();
+}
+
+function subirMockup() {
+  const file = document.getElementById("nuevoMockup").files[0];
+  const nombre = document.getElementById("nombreMockup").value.trim();
+  if (!file || !nombre) 
+    return Swal.fire("❗ Campos incompletos", "Selecciona imagen y nombre.", "warning");
+
+  const formData = new FormData();
+  formData.append("mockup", file);
+  formData.append("nombre", nombre);
+
+  fetch("guardar_mockup.php", { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      Swal.fire({
+        icon: data.success ? "success" : "error",
+        title: data.success ? "Mockup guardado" : "Error",
+        text: data.message,
+      });
+      if (data.success) {
+        cargarMockups();
+        document.getElementById("nuevoMockup").value = "";
+        document.getElementById("nombreMockup").value = "";
+        const modalEl = document.getElementById('modalMockup');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if(modal) modal.hide();
+      }
+    });
+}
+
+function eliminarMockup() {
+  const modelo = document.getElementById("eliminarSelect").value;
+  if (!modelo) return Swal.fire("❗ Atención", "Selecciona un mockup para eliminar.", "warning");
+
+  Swal.fire({
+    title: `¿Eliminar mockup "${modelo}"?`,
+    text: "Esta acción no se puede deshacer.",
+    imageUrl: modelos[modelo],
+    imageAlt: `Vista previa del mockup ${modelo}`,
+    showCancelButton: true,
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar",
+    icon: "warning",
+    confirmButtonColor: "#dc3545",
+    cancelButtonColor: "#6c757d",
+    focusCancel: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`eliminar_mockup.php?nombre=${modelo}`)
+        .then(res => res.json())
+        .then(data => {
+          Swal.fire({
+            icon: data.success ? "success" : "error",
+            title: data.success ? "Eliminado" : "Error",
+            text: data.message,
+            timer: 2500,
+            showConfirmButton: false
+          });
+          cargarMockups();
+          document.getElementById("previewEliminar").style.display = "none";
+          document.getElementById("eliminarSelect").value = "";
+          document.getElementById("imagenPreviewEliminar").src = "";
+        });
+    }
+  });
+}
+
+window.addEventListener("resize", () => {
+  const mockup = canvas.getObjects().find(obj => !obj.selectable);
+  if (mockup) ajustarCanvasAlContenedor(mockup.width, mockup.height);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
