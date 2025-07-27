@@ -74,6 +74,15 @@
         <label class="form-label">🖼 Imagen del usuario:</label>
         <input class="form-control" type="file" id="userimg" accept="image/*" />
       </div>
+      <div class="col-md-12 d-flex justify-content-between mt-3">
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalMockup">
+          ⚙️ Gestionar Mockups
+        </button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" onclick="insertarMockup()">📌 Insertar en Mockup</button>
+          <button class="btn btn-success" onclick="descargar()">📥 Descargar</button>
+        </div>
+      </div>
 
       <div class="col-md-6">
         <label class="form-label">✏️ Texto personalizado:</label>
@@ -118,15 +127,7 @@
       </div>
       <div class="col-md-6 mt-4"></div>
 
-      <div class="col-md-12 d-flex justify-content-between mt-3">
-        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalMockup">
-          ⚙️ Gestionar Mockups
-        </button>
-        <div class="d-flex gap-2">
-          <button class="btn btn-primary" onclick="insertarMockup()">📌 Insertar en Mockup</button>
-          <button class="btn btn-success" onclick="descargar()">📥 Descargar</button>
-        </div>
-      </div>
+      
 
     </div>
   </div>
