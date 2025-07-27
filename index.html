@@ -35,13 +35,11 @@
       justify-content: center;
       max-width: 100%;
     }
-    /* Que el canvas llene el contenedor en ancho, y altura automática para mantener proporción */
     #canvas-container canvas {
       width: 100% !important;
       height: auto !important;
       display: block;
     }
-    /* Preview para eliminar */
     #previewEliminar {
       margin-top: 1rem;
       text-align: center;
@@ -55,7 +53,7 @@
     }
   </style>
 </head>
-<body onload="cargarMockups()">
+<body>
 
 <div class="container py-4">
   <div class="app-header">
@@ -82,9 +80,43 @@
         <input class="form-control" type="text" id="textoPersonalizado" placeholder="Escribe algo..." />
       </div>
 
-      <div class="col-md-6 d-flex align-items-end">
-        <button class="btn btn-outline-primary w-100" onclick="agregarTexto()">➕ Agregar Texto</button>
+      <div class="col-md-6">
+        <label class="form-label">🎨 Fuente:</label>
+        <select id="fontFamily" class="form-select">
+          <option value="Arial">Arial</option>
+          <option value="Comic Sans MS">Comic Sans</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Georgia">Georgia</option>
+        </select>
+        <label class="form-label mt-2">🎨 Color:</label>
+        <input type="color" id="fontColor" value="#000000" class="form-control form-control-color" />
+        <label class="form-label mt-2">🔠 Tamaño:</label>
+        <input type="range" id="fontSize" min="10" max="100" value="24" class="form-range" />
       </div>
+
+      <!-- Vista previa del texto -->
+      <div class="col-md-12 mt-2">
+        <label class="form-label">👁️ Vista previa del texto:</label>
+        <div id="textoPreview" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; min-height: 40px; font-size: 24px; font-family: Arial; color: #000;">
+          (Aquí se mostrará tu texto...)
+        </div>
+      </div>
+
+      <div class="col-md-12 d-flex flex-wrap gap-2 mt-3">
+        <button class="btn btn-outline-primary flex-grow-1" onclick="agregarTexto()">➕ Agregar Texto</button>
+        <button class="btn btn-outline-secondary flex-grow-1" onclick="actualizarTexto()">✏️ Actualizar Texto</button>
+        <button class="btn btn-outline-danger flex-grow-1" onclick="eliminarObjeto()">🗑 Eliminar Objeto</button>
+        <button class="btn btn-outline-info flex-grow-1" onclick="moverAlFrente()">⬆ Traer al Frente</button>
+        <button class="btn btn-outline-info flex-grow-1" onclick="moverAlFondo()">⬇ Enviar al Fondo</button>
+        <button class="btn btn-outline-secondary flex-grow-1" onclick="guardarProyecto()">💾 Guardar Proyecto</button>
+      </div>
+
+      <div class="col-md-6 mt-4">
+        <div id="canvas-container">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+      <div class="col-md-6 mt-4"></div>
 
       <div class="col-md-12 d-flex justify-content-between mt-3">
         <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalMockup">
@@ -95,15 +127,6 @@
           <button class="btn btn-success" onclick="descargar()">📥 Descargar</button>
         </div>
       </div>
-
-      <!-- Canvas dentro de col-md-6 -->
-      <div class="col-md-6 mt-4">
-        <div id="canvas-container">
-          <canvas id="canvas"></canvas>
-        </div>
-      </div>
-      <!-- Columna vacía para balancear -->
-      <div class="col-md-6 mt-4"></div>
 
     </div>
   </div>
@@ -250,13 +273,64 @@ function agregarTexto() {
   const texto = document.getElementById("textoPersonalizado").value;
   if (!texto.trim()) 
     return Swal.fire("✏️ Campo vacío", "Por favor, escribe un texto antes de agregar.", "info");
+  const fontFamily = document.getElementById('fontFamily').value;
+  const fontColor = document.getElementById('fontColor').value;
+  const fontSize = parseInt(document.getElementById('fontSize').value, 10);
+
   const text = new fabric.Textbox(texto, {
     left: 50,
     top: 50,
-    fontSize: 24,
-    fontFamily: "Arial"
+    fontSize: fontSize,
+    fontFamily: fontFamily,
+    fill: fontColor,
+    editable: true,
   });
   canvas.add(text).setActiveObject(text);
+  canvas.renderAll();
+}
+
+function actualizarTexto() {
+  const obj = canvas.getActiveObject();
+  if (obj && obj.type === 'textbox') {
+    obj.text = document.getElementById('textoPersonalizado').value;
+    obj.fontFamily = document.getElementById('fontFamily').value;
+    obj.fill = document.getElementById('fontColor').value;
+    obj.fontSize = parseInt(document.getElementById('fontSize').value, 10);
+    canvas.renderAll();
+  } else {
+    Swal.fire("⚠️ Selecciona un texto para actualizar", "", "info");
+  }
+}
+
+function eliminarObjeto() {
+  const obj = canvas.getActiveObject();
+  if (obj) {
+    canvas.remove(obj);
+    canvas.discardActiveObject();
+    canvas.renderAll();
+  } else {
+    Swal.fire("⚠️ Selecciona un objeto para eliminar", "", "info");
+  }
+}
+
+function moverAlFrente() {
+  const obj = canvas.getActiveObject();
+  if (obj) {
+    obj.bringToFront();
+    canvas.renderAll();
+  } else {
+    Swal.fire("⚠️ Selecciona un objeto primero", "", "info");
+  }
+}
+
+function moverAlFondo() {
+  const obj = canvas.getActiveObject();
+  if (obj) {
+    obj.sendToBack();
+    canvas.renderAll();
+  } else {
+    Swal.fire("⚠️ Selecciona un objeto primero", "", "info");
+  }
 }
 
 function descargar() {
@@ -264,6 +338,12 @@ function descargar() {
   link.download = "resultado_mockup.png";
   link.href = canvas.toDataURL({ format: "png", multiplier: 3 });
   link.click();
+}
+
+function guardarProyecto() {
+  const json = JSON.stringify(canvas.toJSON());
+  localStorage.setItem('mockupProyecto', json);
+  Swal.fire('Guardado', 'Proyecto guardado localmente.', 'success');
 }
 
 function subirMockup() {
@@ -336,6 +416,31 @@ window.addEventListener("resize", () => {
   const mockup = canvas.getObjects().find(obj => !obj.selectable);
   if (mockup) ajustarCanvasAlContenedor(mockup.width, mockup.height);
 });
+
+// Vista previa del texto (actualización en vivo)
+function actualizarVistaPrevia() {
+  const texto = document.getElementById('textoPersonalizado').value;
+  const fontFamily = document.getElementById('fontFamily').value;
+  const fontColor = document.getElementById('fontColor').value;
+  const fontSize = document.getElementById('fontSize').value;
+
+  const previewDiv = document.getElementById('textoPreview');
+  previewDiv.textContent = texto || '(Aquí se mostrará tu texto...)';
+  previewDiv.style.fontFamily = fontFamily;
+  previewDiv.style.color = fontColor;
+  previewDiv.style.fontSize = fontSize + 'px';
+}
+
+document.getElementById('textoPersonalizado').addEventListener('input', actualizarVistaPrevia);
+document.getElementById('fontFamily').addEventListener('change', actualizarVistaPrevia);
+document.getElementById('fontColor').addEventListener('input', actualizarVistaPrevia);
+document.getElementById('fontSize').addEventListener('input', actualizarVistaPrevia);
+
+// Carga inicial
+window.onload = function() {
+  cargarMockups();
+  actualizarVistaPrevia();
+};
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
