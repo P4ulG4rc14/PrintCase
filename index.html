@@ -87,6 +87,13 @@
       <div class="col-md-6">
         <label class="form-label">✏️ Texto personalizado:</label>
         <input class="form-control" type="text" id="textoPersonalizado" placeholder="Escribe algo..." />
+        <!-- Vista previa del texto -->
+      <div class="col-md-12 mt-2">
+        <label class="form-label">👁️ Vista previa del texto:</label>
+        <div id="textoPreview" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; min-height: 40px; font-size: 24px; font-family: Arial; color: #000;">
+          (Aquí se mostrará tu texto...)
+        </div>
+      </div>
       </div>
 
       <div class="col-md-6">
@@ -103,13 +110,7 @@
         <input type="range" id="fontSize" min="10" max="100" value="24" class="form-range" />
       </div>
 
-      <!-- Vista previa del texto -->
-      <div class="col-md-12 mt-2">
-        <label class="form-label">👁️ Vista previa del texto:</label>
-        <div id="textoPreview" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; min-height: 40px; font-size: 24px; font-family: Arial; color: #000;">
-          (Aquí se mostrará tu texto...)
-        </div>
-      </div>
+      
 
       <div class="col-md-12 d-flex flex-wrap gap-2 mt-3">
         <button class="btn btn-outline-primary flex-grow-1" onclick="agregarTexto()">➕ Agregar Texto</button>
@@ -279,9 +280,9 @@ function agregarTexto() {
   const fontSize = parseInt(document.getElementById('fontSize').value, 10);
 
   const text = new fabric.Textbox(texto, {
-    left: 50,
-    top: 50,
-    fontSize: fontSize,
+    left: 70,
+    top: 70,
+    fontSize: fontSize * texto.length * 0.6,
     fontFamily: fontFamily,
     fill: fontColor,
     editable: true,
@@ -297,6 +298,7 @@ function actualizarTexto() {
     obj.fontFamily = document.getElementById('fontFamily').value;
     obj.fill = document.getElementById('fontColor').value;
     obj.fontSize = parseInt(document.getElementById('fontSize').value, 10);
+    obj.width = obj.fontSize * obj.text.length * 0.6;
     canvas.renderAll();
   } else {
     Swal.fire("⚠️ Selecciona un texto para actualizar", "", "info");
