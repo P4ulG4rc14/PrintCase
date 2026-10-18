@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Print Case - Editor de Mockups</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Audiowide&family=Bebas+Neue&family=Cormorant+Garamond:wght@400;600&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Libre+Baskerville&family=Lobster&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;700&family=Nunito:wght@300;400;700&family=Orbitron:wght@400;700&family=Oswald:wght@300;400;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600;700&family=Press+Start+2P&family=Quicksand:wght@300;400;500;700&family=Raleway:wght@300;400;600;700&family=Satisfy&family=Urbanist:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root {
+      --primary: #e00d0d;
+      --primary-dark: #b80000;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #202124;
+      --muted: #6c757d;
+      --border: #e5e7eb;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', sans-serif;
+      color: var(--text);
+    }
+
+    .app-wrapper {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .app-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 22px;
+      border-radius: 22px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(224, 13, 13, .25);
+    }
+
+    .app-header h2 {
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .app-header p {
+      margin: 4px 0 0;
+      opacity: .9;
+      font-size: 14px;
+    }
+
+    .editor-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .06);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: #fff;
+      padding: 22px;
+      height: 100%;
+    }
+
+    .workspace {
+      padding: 22px;
+      background: #fafafa;
+      min-height: 620px;
+    }
+
+    .section-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #111827;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .control-box {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 12px;
+      min-height: 42px;
+      border-color: #d1d5db;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 .2rem rgba(224, 13, 13, .15);
+    }
+
+    .btn {
+      border-radius: 12px;
+      font-weight: 600;
+      min-height: 42px;
+    }
+
+    .btn-main {
+      background: var(--primary);
+      color: white;
+      border: none;
+    }
+
+    .btn-main:hover {
+      background: var(--primary-dark);
+      color: white;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .canvas-shell {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 16px;
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .02);
+    }
+
+    #canvas-container {
+      width: 100%;
+      max-width: 520px;
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+        linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+        linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    #canvas-container canvas {
+      max-width: 100% !important;
+      height: auto !important;
+      display: block;
+    }
+
+    #textoPreview {
+      padding: 12px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      min-height: 46px;
+      background: white;
+      font-size: 24px;
+      font-family: Arial;
+      color: #000;
+      word-break: break-word;
+    }
+
+    .toolbar-mobile {
+      display: none;
+    }
+
+    #previewEliminar {
+      margin-top: 1rem;
+      text-align: center;
+      display: none;
+    }
+
+    #previewEliminar img {
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+    }
+
+    .select2-container .select2-selection--single {
+      height: 42px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      border-color: #d1d5db;
+    }
+
+    .select2-selection__rendered {
+      line-height: 28px !important;
+    }
+
+    .select2-selection__arrow {
+      height: 42px !important;
+    }
+
+    @media (max-width: 991px) {
+      .app-wrapper {
+        padding: 14px;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .workspace {
+        min-height: auto;
+        padding: 16px;
+      }
+
+      .canvas-shell {
+        min-height: 380px;
+        padding: 10px;
+      }
+
+      #canvas-container {
+        min-height: 360px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .app-header {
+        padding: 18px;
+        border-radius: 18px;
+        text-align: center;
+      }
+
+      .app-header h2 {
+        font-size: 22px;
+      }
+
+      .app-header p {
+        font-size: 13px;
+      }
+
+      .sidebar {
+        padding: 16px;
+      }
+
+      .action-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .desktop-actions {
+        display: none !important;
+      }
+
+      .toolbar-mobile {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .canvas-shell {
+        min-height: 330px;
+      }
+
+      #canvas-container {
+        min-height: 320px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-wrapper">
+    <div class="app-header">
+      <h2><i class="bi bi-palette-fill me-2"></i>Print Case</h2>
+      <p>Editor de mockups, collage, texto personalizado y fondo de color</p>
+    </div>
+
+    <div class="editor-card">
+      <div class="row g-0">
+
+        <div class="col-lg-4">
+          <div class="sidebar">
+
+            <div class="control-box">
+              <div class="section-title">📱 Mockup</div>
+
+              <div class="mb-3">
+                <label class="form-label">Modelo de teléfono</label>
+                <select class="form-select" id="modeloSelect">
+                  <option value="">-- Selecciona --</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Imagen del usuario</label>
+                <input class="form-control" type="file" id="userimg" accept="image/*">
+              </div>
+
+              <div class="d-grid gap-2">
+                <button class="btn btn-main" onclick="insertarMockup()">📌 Insertar en Mockup</button>
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalMockup">
+                  ⚙️ Gestionar Mockups
+                </button>
+              </div>
+            </div>
+
+            <div class="control-box">
+              <div class="section-title">🧩 Collage y fondo</div>
+
+              <div class="mb-3">
+                <label class="form-label">Imágenes para collage</label>
+                <input class="form-control" type="file" id="collageImgs" accept="image/*" multiple>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Color de fondo</label>
+                <input type="color" id="backgroundColor" value="#ffffff" class="form-control form-control-color">
+              </div>
+
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-warning" onclick="agregarCollage()">🧩 Agregar Collage</button>
+              </div>
+            </div>
+
+            <div class="control-box">
+              <div class="section-title">✏️ Texto personalizado</div>
+
+              <div class="mb-3">
+                <label class="form-label">Texto</label>
+                <input class="form-control" type="text" id="textoPersonalizado" placeholder="Escribe algo...">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Fuente</label>
+                <select id="fontFamily" class="form-select">
+
+  <optgroup label="Modernas">
+    <option value="Poppins" style="font-family:'Poppins';">Poppins</option>
+    <option value="Montserrat" style="font-family:'Montserrat';">Montserrat</option>
+    <option value="Raleway" style="font-family:'Raleway';">Raleway</option>
+    <option value="Nunito" style="font-family:'Nunito';">Nunito</option>
+    <option value="Quicksand" style="font-family:'Quicksand';">Quicksand</option>
+    <option value="Urbanist" style="font-family:'Urbanist';">Urbanist</option>
+  </optgroup>
+
+  <optgroup label="Elegantes">
+    <option value="Playfair Display" style="font-family:'Playfair Display';">Playfair Display</option>
+    <option value="Merriweather" style="font-family:'Merriweather';">Merriweather</option>
+    <option value="Cormorant Garamond" style="font-family:'Cormorant Garamond';">Cormorant Garamond</option>
+    <option value="Libre Baskerville" style="font-family:'Libre Baskerville';">Libre Baskerville</option>
+  </optgroup>
+
+  <optgroup label="Bold">
+    <option value="Bebas Neue" style="font-family:'Bebas Neue';">Bebas Neue</option>
+    <option value="Anton" style="font-family:'Anton';">Anton</option>
+    <option value="Oswald" style="font-family:'Oswald';">Oswald</option>
+    <option value="Archivo Black" style="font-family:'Archivo Black';">Archivo Black</option>
+  </optgroup>
+
+  <optgroup label="Script">
+    <option value="Pacifico" style="font-family:'Pacifico';">Pacifico</option>
+    <option value="Dancing Script" style="font-family:'Dancing Script';">Dancing Script</option>
+    <option value="Satisfy" style="font-family:'Satisfy';">Satisfy</option>
+    <option value="Great Vibes" style="font-family:'Great Vibes';">Great Vibes</option>
+    <option value="Lobster" style="font-family:'Lobster';">Lobster</option>
+  </optgroup>
+
+  <optgroup label="Tech / Gamer">
+    <option value="Orbitron" style="font-family:'Orbitron';">Orbitron</option>
+    <option value="Audiowide" style="font-family:'Audiowide';">Audiowide</option>
+    <option value="Press Start 2P" style="font-family:'Press Start 2P'; font-size:10px;">
+      Press Start 2P
+    </option>
+  </optgroup>
+
+  <optgroup label="Clásicas">
+    <option value="Arial" style="font-family:'Arial';">Arial</option>
+    <option value="Georgia" style="font-family:'Georgia';">Georgia</option>
+    <option value="Courier New" style="font-family:'Courier New';">Courier New</option>
+    <option value="Verdana" style="font-family:'Verdana';">Verdana</option>
+    <option value="Tahoma" style="font-family:'Tahoma';">Tahoma</option>
+  </optgroup>
+
+</select>
+              </div>
+
+              <div class="row">
+                <div class="col-6">
+                  <label class="form-label">Color</label>
+                  <input type="color" id="fontColor" value="#000000" class="form-control form-control-color">
+                </div>
+
+                <div class="col-6">
+                  <label class="form-label">Tamaño</label>
+                  <input type="range" id="fontSize" min="10" max="100" value="24" class="form-range">
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label">Vista previa</label>
+                <div id="textoPreview">(Aquí se mostrará tu texto...)</div>
+              </div>
+
+              <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-outline-primary" onclick="agregarTexto()">➕ Agregar Texto</button>
+                <button class="btn btn-outline-secondary" onclick="actualizarTexto()">✏️ Actualizar Texto</button>
+              </div>
+            </div>
+
+            <div class="control-box mb-0">
+              <div class="section-title">🛠 Herramientas</div>
+
+              <div class="action-grid">
+                <button class="btn btn-outline-danger" onclick="eliminarObjeto()">🗑 Eliminar</button>
+                <button class="btn btn-outline-info" onclick="moverAlFrente()">⬆ Frente</button>
+                <button class="btn btn-outline-info" onclick="moverAlFondo()">⬇ Fondo</button>
+                <button class="btn btn-outline-secondary" onclick="guardarProyecto()">💾 Guardar</button>
+              </div>
+
+              <div class="d-grid mt-3">
+                <button class="btn btn-success" onclick="descargar()">📥 Descargar imagen</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="workspace">
+
+            <div class="toolbar-mobile">
+              <button class="btn btn-main" onclick="insertarMockup()">📌 Insertar en Mockup</button>
+              <button class="btn btn-success" onclick="descargar()">📥 Descargar imagen</button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3 desktop-actions">
+              <div>
+                <h5 class="mb-0 fw-bold">Área de diseño</h5>
+                <small class="text-muted">Arrastra, cambia tamaño y acomoda los elementos</small>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button class="btn btn-main" onclick="insertarMockup()">📌 Insertar en Mockup</button>
+                <button class="btn btn-success" onclick="descargar()">📥 Descargar</button>
+              </div>
+            </div>
+
+            <div class="canvas-shell">
+              <div id="canvas-container">
+                <canvas id="canvas"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalMockup" tabindex="-1" aria-labelledby="modalMockupLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow">
+        <div class="modal-header text-white" style="background:#e00d0d;">
+          <h5 class="modal-title" id="modalMockupLabel">📤 Subir o eliminar Mockup</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Imagen del Mockup PNG</label>
+            <input type="file" id="nuevoMockup" class="form-control" accept="image/png">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nombre del modelo</label>
+            <input type="text" id="nombreMockup" class="form-control" placeholder="Ej. iphone15">
+          </div>
+
+          <div class="d-grid gap-2 mb-3">
+            <button class="btn btn-outline-success" onclick="subirMockup()">💾 Guardar Mockup</button>
+          </div>
+
+          <hr>
+
+          <div>
+            <label class="form-label">Selecciona mockup a eliminar</label>
+            <select id="eliminarSelect" class="form-select">
+              <option value="">-- Selecciona --</option>
+            </select>
+
+            <div id="previewEliminar">
+              <small>Vista previa:</small>
+              <img id="imagenPreviewEliminar" src="" alt="Vista previa mockup">
+            </div>
+
+            <div class="d-grid gap-2 mt-3">
+              <button class="btn btn-outline-danger" onclick="eliminarMockup()">🗑 Eliminar Mockup</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <script>
+    let modelos = {};
+
+    const canvas = new fabric.Canvas("canvas", {
+      preserveObjectStacking: true,
+    });
+
+    function activarSelect2() {
+      $('#modeloSelect').select2({
+        placeholder: '-- Selecciona --',
+        allowClear: true,
+        width: '100%'
+      });
+    }
+
+    function inicializarCanvas() {
+      const container = document.getElementById("canvas-container");
+      const size = Math.min(container.clientWidth, 600);
+
+      canvas.setWidth(size);
+      canvas.setHeight(size);
+      canvas.setZoom(1);
+
+      aplicarColorFondo();
+      canvas.renderAll();
+    }
+
+    function ajustarCanvasAlContenedor(originalWidth, originalHeight) {
+      const container = document.getElementById("canvas-container");
+      const maxWidth = container.clientWidth;
+      const maxHeight = window.innerWidth <= 576 ? 320 : container.clientHeight;
+
+      const scaleX = maxWidth / originalWidth;
+      const scaleY = maxHeight / originalHeight;
+      const escala = Math.min(scaleX, scaleY);
+
+      canvas.setWidth(originalWidth * escala);
+      canvas.setHeight(originalHeight * escala);
+      canvas.setZoom(escala);
+    }
+
+    async function cargarMockups() {
+      try {
+        const res = await fetch("mockups.json");
+        modelos = await res.json();
+
+        const select = document.getElementById("modeloSelect");
+        select.innerHTML = '<option value=""></option>';
+
+        const eliminarSelect = document.getElementById("eliminarSelect");
+        eliminarSelect.innerHTML = '<option value="">-- Selecciona --</option>';
+
+        Object.entries(modelos).forEach(([key, value]) => {
+          select.add(new Option(key, key));
+          eliminarSelect.add(new Option(key, key));
+        });
+
+        if ($.fn.select2) {
+          $('#modeloSelect').select2('destroy');
+          activarSelect2();
+        }
+
+      } catch (error) {
+        Swal.fire("Error", "No se pudo cargar mockups.json", "error");
+      }
+    }
+
+    document.getElementById("eliminarSelect").addEventListener("change", function () {
+      const modelo = this.value;
+      const previewDiv = document.getElementById("previewEliminar");
+      const previewImg = document.getElementById("imagenPreviewEliminar");
+
+      if (modelo && modelos[modelo]) {
+        previewImg.src = modelos[modelo];
+        previewDiv.style.display = "block";
+      } else {
+        previewDiv.style.display = "none";
+        previewImg.src = "";
+      }
+    });
+
+    function aplicarColorFondo() {
+      const color = document.getElementById("backgroundColor").value;
+
+      canvas.setBackgroundColor(color, function () {
+        canvas.renderAll();
+      });
+    }
+
+    function insertarMockup() {
+      const modelo = document.getElementById("modeloSelect").value;
+      const userFile = document.getElementById("userimg").files[0];
+
+      if (!modelo || !userFile) {
+        return Swal.fire("Faltan datos", "Selecciona un modelo y una imagen.", "warning");
+      }
+
+      canvas.clear();
+      aplicarColorFondo();
+
+      const mockupPath = modelos[modelo];
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        fabric.Image.fromURL(e.target.result, function (userImg) {
+          fabric.Image.fromURL(mockupPath, function (mockupImg) {
+
+            ajustarCanvasAlContenedor(mockupImg.width, mockupImg.height);
+
+            const areaWidth = mockupImg.width * 0.8;
+            const areaHeight = mockupImg.height * 0.8;
+            const scale = Math.min(areaWidth / userImg.width, areaHeight / userImg.height);
+
+            userImg.set({
+              originX: "center",
+              originY: "center",
+              left: mockupImg.width / 2,
+              top: mockupImg.height / 2,
+              scaleX: scale,
+              scaleY: scale,
+              cornerStyle: "circle",
+              transparentCorners: false
+            });
+
+            mockupImg.set({
+              selectable: false,
+              evented: false
+            });
+
+            canvas.add(userImg).setActiveObject(userImg);
+            canvas.add(mockupImg);
+            mockupImg.bringToFront();
+
+            canvas.renderAll();
+
+            Swal.fire({
+              icon: "success",
+              title: "Mockup insertado",
+              timer: 1500,
+              showConfirmButton: false
+            });
+          });
+        });
+      };
+
+      reader.readAsDataURL(userFile);
+    }
+
+    function agregarCollage() {
+      const files = document.getElementById("collageImgs").files;
+
+      if (!files.length) {
+        return Swal.fire("Sin imágenes", "Selecciona una o más imágenes para el collage.", "info");
+      }
+
+      aplicarColorFondo();
+
+      const zoom = canvas.getZoom() || 1;
+      const canvasWidth = canvas.getWidth() / zoom;
+      const canvasHeight = canvas.getHeight() / zoom;
+
+      const total = files.length;
+      const columnas = Math.ceil(Math.sqrt(total));
+      const filas = Math.ceil(total / columnas);
+
+      const espacio = 20;
+      const celdaWidth = (canvasWidth - espacio * (columnas + 1)) / columnas;
+      const celdaHeight = (canvasHeight - espacio * (filas + 1)) / filas;
+
+      Array.from(files).forEach((file, index) => {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          fabric.Image.fromURL(e.target.result, function (img) {
+            const col = index % columnas;
+            const row = Math.floor(index / columnas);
+
+            const left = espacio + col * (celdaWidth + espacio);
+            const top = espacio + row * (celdaHeight + espacio);
+
+            const scale = Math.min(celdaWidth / img.width, celdaHeight / img.height);
+
+            img.set({
+              left: left,
+              top: top,
+              scaleX: scale,
+              scaleY: scale,
+              cornerStyle: "circle",
+              transparentCorners: false
+            });
+
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+          });
+        };
+
+        reader.readAsDataURL(file);
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Collage agregado",
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
+    function agregarTexto() {
+      const texto = document.getElementById("textoPersonalizado").value;
+
+      if (!texto.trim()) {
+        return Swal.fire("Campo vacío", "Escribe un texto antes de agregar.", "info");
+      }
+
+      const fontFamily = document.getElementById("fontFamily").value;
+      const fontColor = document.getElementById("fontColor").value;
+      const fontSize = parseInt(document.getElementById("fontSize").value, 10);
+
+      const text = new fabric.Textbox(texto, {
+        left: 70,
+        top: 70,
+        width: 250,
+        fontSize: fontSize,
+        fontFamily: fontFamily,
+        fill: fontColor,
+        editable: true,
+        cornerStyle: "circle",
+        transparentCorners: false
+      });
+
+      canvas.add(text).setActiveObject(text);
+      canvas.renderAll();
+    }
+
+    function actualizarTexto() {
+      const obj = canvas.getActiveObject();
+
+      if (obj && obj.type === "textbox") {
+        obj.text = document.getElementById("textoPersonalizado").value;
+        obj.fontFamily = document.getElementById("fontFamily").value;
+        obj.fill = document.getElementById("fontColor").value;
+        obj.fontSize = parseInt(document.getElementById("fontSize").value, 10);
+        canvas.renderAll();
+      } else {
+        Swal.fire("Selecciona un texto", "Debes seleccionar un texto para actualizarlo.", "info");
+      }
+    }
+
+    function eliminarObjeto() {
+      const obj = canvas.getActiveObject();
+
+      if (obj) {
+        canvas.remove(obj);
+        canvas.discardActiveObject();
+        canvas.renderAll();
+      } else {
+        Swal.fire("Selecciona un objeto", "", "info");
+      }
+    }
+
+    function moverAlFrente() {
+      const obj = canvas.getActiveObject();
+
+      if (obj) {
+        obj.bringToFront();
+        canvas.renderAll();
+      } else {
+        Swal.fire("Selecciona un objeto", "", "info");
+      }
+    }
+
+    function moverAlFondo() {
+      const obj = canvas.getActiveObject();
+
+      if (obj) {
+        obj.sendToBack();
+        canvas.renderAll();
+      } else {
+        Swal.fire("Selecciona un objeto", "", "info");
+      }
+    }
+
+    function descargar() {
+      aplicarColorFondo();
+
+      setTimeout(() => {
+        const link = document.createElement("a");
+        link.download = "resultado_mockup.png";
+        link.href = canvas.toDataURL({
+          format: "png",
+          multiplier: 3
+        });
+        link.click();
+      }, 200);
+    }
+
+    function guardarProyecto() {
+      const json = JSON.stringify(canvas.toJSON(["backgroundColor"]));
+      localStorage.setItem("mockupProyecto", json);
+
+      Swal.fire("Guardado", "Proyecto guardado localmente.", "success");
+    }
+
+    function subirMockup() {
+      const file = document.getElementById("nuevoMockup").files[0];
+      const nombre = document.getElementById("nombreMockup").value.trim();
+
+      if (!file || !nombre) {
+        return Swal.fire("Campos incompletos", "Selecciona imagen y nombre.", "warning");
+      }
+
+      const formData = new FormData();
+      formData.append("mockup", file);
+      formData.append("nombre", nombre);
+
+      fetch("guardar_mockup.php", {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          Swal.fire({
+            icon: data.success ? "success" : "error",
+            title: data.success ? "Mockup guardado" : "Error",
+            text: data.message
+          });
+
+          if (data.success) {
+            cargarMockups();
+
+            document.getElementById("nuevoMockup").value = "";
+            document.getElementById("nombreMockup").value = "";
+
+            const modalEl = document.getElementById("modalMockup");
+            const modal = bootstrap.Modal.getInstance(modalEl);
+
+            if (modal) modal.hide();
+          }
+        });
+    }
+
+    function eliminarMockup() {
+      const modelo = document.getElementById("eliminarSelect").value;
+
+      if (!modelo) {
+        return Swal.fire("Atención", "Selecciona un mockup para eliminar.", "warning");
+      }
+
+      Swal.fire({
+        title: `¿Eliminar mockup "${modelo}"?`,
+        text: "Esta acción no se puede deshacer.",
+        imageUrl: modelos[modelo],
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+        icon: "warning",
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(`eliminar_mockup.php?nombre=${modelo}`)
+            .then(res => res.json())
+            .then(data => {
+              Swal.fire({
+                icon: data.success ? "success" : "error",
+                title: data.success ? "Eliminado" : "Error",
+                text: data.message,
+                timer: 2200,
+                showConfirmButton: false
+              });
+
+              cargarMockups();
+
+              document.getElementById("previewEliminar").style.display = "none";
+              document.getElementById("eliminarSelect").value = "";
+              document.getElementById("imagenPreviewEliminar").src = "";
+            });
+        }
+      });
+    }
+
+    function actualizarVistaPrevia() {
+      const texto = document.getElementById("textoPersonalizado").value;
+      const fontFamily = document.getElementById("fontFamily").value;
+      const fontColor = document.getElementById("fontColor").value;
+      const fontSize = document.getElementById("fontSize").value;
+
+      const previewDiv = document.getElementById("textoPreview");
+      previewDiv.textContent = texto || "(Aquí se mostrará tu texto...)";
+      previewDiv.style.fontFamily = fontFamily;
+      previewDiv.style.color = fontColor;
+      previewDiv.style.fontSize = fontSize + "px";
+    }
+
+    document.getElementById("textoPersonalizado").addEventListener("input", actualizarVistaPrevia);
+    document.getElementById("fontFamily").addEventListener("change", actualizarVistaPrevia);
+    document.getElementById("fontColor").addEventListener("input", actualizarVistaPrevia);
+    document.getElementById("fontSize").addEventListener("input", actualizarVistaPrevia);
+    document.getElementById("backgroundColor").addEventListener("input", aplicarColorFondo);
+
+    window.addEventListener("resize", () => {
+      const mockup = canvas.getObjects().find(obj => !obj.selectable);
+
+      if (mockup) {
+        ajustarCanvasAlContenedor(mockup.width, mockup.height);
+      } else {
+        inicializarCanvas();
+      }
+    });
+
+    window.onload = function () {
+      cargarMockups();
+      actualizarVistaPrevia();
+      activarSelect2();
+      inicializarCanvas();
+    };
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
